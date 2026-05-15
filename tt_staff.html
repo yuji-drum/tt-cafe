@@ -50,18 +50,21 @@ body{font-family:'Jost','Hiragino Sans',sans-serif;background:#f0ede6;color:var(
 .c-seat{font-size:11px;color:var(--text-muted);min-width:90px;font-family:'Jost',sans-serif;}
 .c-pax{font-family:'Cormorant Garamond',serif;font-size:15px;color:var(--text-mid);min-width:28px;text-align:right;}
 .c-tel{font-size:11px;color:var(--text-muted);font-family:'Jost',sans-serif;}
+.c-end{font-size:11px;color:var(--text-muted);font-family:'Jost',sans-serif;font-style:italic;}
 .del-btn{background:none;border:1px solid var(--cream-dark);color:#a05050;padding:.18rem .45rem;border-radius:2px;cursor:pointer;font-size:10px;margin-left:auto;}
 .empty{text-align:center;padding:3rem 1rem;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:1.1rem;color:var(--text-muted);}
 .tl-outer{overflow-x:auto;}
-.tl-table{min-width:820px;border-collapse:collapse;width:100%;background:var(--white);}
+.tl-table{min-width:900px;border-collapse:collapse;width:100%;background:var(--white);}
 .tl-table th{font-size:10px;color:var(--text-muted);font-weight:400;padding:.35rem .2rem;text-align:center;border-bottom:1px solid var(--cream-dark);}
 .tl-lbl{font-size:11px;color:var(--text-mid);padding:.65rem .65rem .65rem 0;vertical-align:top;white-space:nowrap;border-bottom:1px solid var(--cream-dark);min-width:110px;}
 .tl-lbl-sub{font-size:9px;color:var(--text-muted);margin-top:2px;}
 .tl-lbl-avail{font-size:9px;margin-top:3px;font-weight:500;}
 .tl-cell{border-bottom:1px solid var(--cream-dark);border-left:1px solid #e6e2d8;padding:2px;vertical-align:top;height:52px;min-width:44px;position:relative;}
+.tl-cell.in-use{background:#f5f0e8;}
 .tl-block{border-radius:2px;padding:2px 4px;margin-bottom:2px;}
 .tl-bname{font-size:9px;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:52px;}
 .tl-bpax{font-size:8px;color:rgba(245,243,238,.8);}
+.tl-using{font-size:8px;color:var(--text-muted);text-align:center;padding-top:4px;}
 .full-badge{position:absolute;bottom:2px;right:2px;background:#b05050;color:#fff;font-size:7px;padding:1px 3px;border-radius:2px;}
 .week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
 .week-col{background:var(--white);border:1px solid var(--cream-dark);border-radius:4px;overflow:hidden;min-height:180px;}
@@ -149,7 +152,7 @@ body{font-family:'Jost','Hiragino Sans',sans-serif;background:#f0ede6;color:var(
   <div class="modal-title">予約追加</div>
   <label class="mlabel">日付</label>
   <input type="date" class="minput" id="m-date">
-  <label class="mlabel">時間</label>
+  <label class="mlabel">時間（11:00〜22:00）</label>
   <select class="mselect" id="m-time"></select>
   <label class="mlabel">席タイプ</label>
   <select class="mselect" id="m-seat">
@@ -181,53 +184,65 @@ var SEATS = [
   { id:"sofa-l",  name:"ソファ席(〜6名)", cap:"2〜6名様", color:"#5a8f5a" }
 ];
 var WEEK_NAMES = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+
+// 受付時間: 11:00〜22:00
 var HOURS = [];
-for (var h=11;h<=21;h++) { HOURS.push(h+":00"); if (h<21) HOURS.push(h+":30"); }
+for (var h = 11; h <= 22; h++) {
+  HOURS.push(h + ":00");
+  if (h < 22) HOURS.push(h + ":30");
+}
 
-var curView="", curDay=today0(), curWeekStart=weekStart(curDay);
-var curMonth=new Date(curDay.getFullYear(),curDay.getMonth(),1);
-var selMonthDay=null, rsvCache=[], cbN=0;
+var curView = "", curDay = today0(), curWeekStart = weekStart(curDay);
+var curMonth = new Date(curDay.getFullYear(), curDay.getMonth(), 1);
+var selMonthDay = null, rsvCache = [], cbN = 0;
 
-function today0(){var d=new Date();d.setHours(0,0,0,0);return d;}
-function pad(n){return("0"+n).slice(-2);}
-function fmtD(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
-function addDays(d,n){var r=new Date(d);r.setDate(r.getDate()+n);return r;}
-function weekStart(d){var s=new Date(d);s.setDate(s.getDate()-s.getDay());s.setHours(0,0,0,0);return s;}
-function isToday(d){return fmtD(d)===fmtD(new Date());}
-function fmtLabel(d){var W=["日","月","火","水","木","金","土"];return(d.getMonth()+1)+"月"+d.getDate()+"日("+W[d.getDay()]+")";}
-function fmtWeekLabel(s){var e=addDays(s,6);return(s.getMonth()+1)+"/"+s.getDate()+" 〜 "+(e.getMonth()+1)+"/"+e.getDate();}
-function fmtMonthLabel(d){return d.getFullYear()+"年"+(d.getMonth()+1)+"月";}
-function getSeat(sid){for(var i=0;i<SEATS.length;i++)if(SEATS[i].id===sid)return SEATS[i];return{id:sid,name:sid,cap:"",color:"#aaa"};}
-function rsvsByDate(ds){var out=[];for(var i=0;i<rsvCache.length;i++)if(rsvCache[i].date===ds)out.push(rsvCache[i]);return out;}
+function today0() { var d = new Date(); d.setHours(0,0,0,0); return d; }
+function pad(n) { return ("0"+n).slice(-2); }
+function fmtD(d) { return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
+function addDays(d,n) { var r=new Date(d); r.setDate(r.getDate()+n); return r; }
+function weekStart(d) { var s=new Date(d); s.setDate(s.getDate()-s.getDay()); s.setHours(0,0,0,0); return s; }
+function isToday(d) { return fmtD(d)===fmtD(new Date()); }
+function fmtLabel(d) { var W=["日","月","火","水","木","金","土"]; return (d.getMonth()+1)+"月"+d.getDate()+"日("+W[d.getDay()]+")"; }
+function fmtWeekLabel(s) { var e=addDays(s,6); return (s.getMonth()+1)+"/"+s.getDate()+" 〜 "+(e.getMonth()+1)+"/"+e.getDate(); }
+function fmtMonthLabel(d) { return d.getFullYear()+"年"+(d.getMonth()+1)+"月"; }
+function getSeat(sid) { for(var i=0;i<SEATS.length;i++) if(SEATS[i].id===sid) return SEATS[i]; return{id:sid,name:sid,cap:"",color:"#aaa"}; }
+function rsvsByDate(ds) { var out=[]; for(var i=0;i<rsvCache.length;i++) if(rsvCache[i].date===ds) out.push(rsvCache[i]); return out; }
 
-function canFit(existing,newPax,maxPerTable,tables){
-  var slots=[];for(var i=0;i<tables;i++)slots.push(maxPerTable);
+function timeToMin(t) { var p=t.split(":"); return parseInt(p[0])*60+parseInt(p[1]); }
+function minToTime(m) { return pad(Math.floor(m/60))+":"+pad(m%60); }
+function endTime(t) { return minToTime(timeToMin(t)+90); }
+
+function canFit(existing, newPax, maxPerTable, tables) {
+  var slots=[]; for(var i=0;i<tables;i++) slots.push(maxPerTable);
   for(var i=0;i<existing.length;i++){var ok=false;for(var j=0;j<slots.length;j++){if(slots[j]>=existing[i]){slots[j]-=existing[i];ok=true;break;}}if(!ok)return false;}
   for(var j=0;j<slots.length;j++){if(slots[j]>=newPax)return true;}return false;
 }
-function canBook(date,time,sid,pax){
-  var ex=[];
-  for(var i=0;i<rsvCache.length;i++){if(rsvCache[i].date===date&&rsvCache[i].time===time&&rsvCache[i].seat===sid)ex.push(parseInt(rsvCache[i].pax)||0);}
-  if(sid==="counter"){var t=0;for(var i=0;i<ex.length;i++)t+=ex[i];return t+pax<=8;}
-  if(sid==="sofa-s")return canFit(ex,pax,5,2);
-  if(sid==="sofa-l")return canFit(ex,pax,6,2);
+function canBook(date, time, sid, pax) {
+  var myStart=timeToMin(time); var myEnd=myStart+90;
+  var overlapping=[];
+  for(var i=0;i<rsvCache.length;i++){
+    var r=rsvCache[i];
+    if(r.date!==date||r.seat!==sid) continue;
+    var rStart=timeToMin(r.time); var rEnd=rStart+90;
+    if(rStart<myEnd&&rEnd>myStart) overlapping.push(parseInt(r.pax)||0);
+  }
+  if(sid==="counter"){var t=0;for(var i=0;i<overlapping.length;i++)t+=overlapping[i];return t+pax<=8;}
+  if(sid==="sofa-s") return canFit(overlapping,pax,5,2);
+  if(sid==="sofa-l") return canFit(overlapping,pax,6,2);
   return false;
 }
-function seatAvailLabel(date,time,sid){
-  var ex=[];
-  for(var i=0;i<rsvCache.length;i++){if(rsvCache[i].date===date&&rsvCache[i].time===time&&rsvCache[i].seat===sid)ex.push(parseInt(rsvCache[i].pax)||0);}
-  if(sid==="counter"){var t=0;for(var i=0;i<ex.length;i++)t+=ex[i];return"残"+(8-t)+"席";}
-  var maxPT=sid==="sofa-s"?5:6; var slots=[maxPT,maxPT];
-  for(var i=0;i<ex.length;i++){for(var j=0;j<slots.length;j++){if(slots[j]>=ex[i]){slots[j]-=ex[i];break;}}}
-  var max=Math.max(slots[0],slots[1]);
-  return max<=0?"満席":"残"+max+"名まで";
+function isFull(date, time, sid) {
+  return !canBook(date, time, sid, 1);
 }
-function isFull(date,time,sid){
-  var ex=[];
-  for(var i=0;i<rsvCache.length;i++){if(rsvCache[i].date===date&&rsvCache[i].time===time&&rsvCache[i].seat===sid)ex.push(parseInt(rsvCache[i].pax)||0);}
-  if(sid==="counter"){var t=0;for(var i=0;i<ex.length;i++)t+=ex[i];return t>=8;}
-  if(sid==="sofa-s")return!canFit(ex,1,5,2);
-  if(sid==="sofa-l")return!canFit(ex,1,6,2);
+// そのスロットが既存予約の使用中時間に含まれるか
+function isInUse(date, time, sid) {
+  var t = timeToMin(time);
+  for(var i=0;i<rsvCache.length;i++){
+    var r=rsvCache[i];
+    if(r.date!==date||r.seat!==sid) continue;
+    var rStart=timeToMin(r.time); var rEnd=rStart+90;
+    if(t>rStart&&t<rEnd) return true;
+  }
   return false;
 }
 
@@ -270,7 +285,7 @@ function renderSummary(){
   var defs=[{id:"counter",name:"カウンター",max:8},{id:"sofa-s",name:"ソファ(小)",max:10},{id:"sofa-l",name:"ソファ(大)",max:12}];
   var html="";
   for(var i=0;i<defs.length;i++){
-    var d=defs[i]; var used=0;
+    var d=defs[i];var used=0;
     var ex=rsvsByDate(ds).filter(function(r){return r.seat===d.id;});
     for(var j=0;j<ex.length;j++) used+=parseInt(ex[j].pax)||0;
     var pct=Math.min(100,Math.round(used/d.max*100));
@@ -290,12 +305,14 @@ function renderDay(){
   var times=Object.keys(g).sort();var html="";
   for(var t=0;t<times.length;t++){
     var time=times[t];var items=g[time];
-    html+="<div class='grp'><div class='grp-head'>"+time+" <span class='grp-cnt'>"+items.length+"件</span></div>";
+    html+="<div class='grp'><div class='grp-head'>"+time+" <span style='font-size:12px;color:var(--text-muted)'>〜"+endTime(time)+"</span> <span class='grp-cnt'>"+items.length+"件</span></div>";
     for(var k=0;k<items.length;k++){
       var r=items[k];var s=getSeat(r.seat);
       html+="<div class='card'><div class='dot' style='background:"+s.color+"'></div>"
-        +"<span class='c-time'>"+r.time+"</span><span class='c-name'>"+r.name+" 様</span>"
-        +"<span class='c-seat'>"+s.name+"</span><span class='c-pax'>"+r.pax+"名</span>"
+        +"<span class='c-time'>"+r.time+"</span>"
+        +"<span class='c-name'>"+r.name+" 様</span>"
+        +"<span class='c-seat'>"+s.name+"</span>"
+        +"<span class='c-pax'>"+r.pax+"名</span>"
         +"<span class='c-tel'>"+r.tel+"</span>"
         +"<button class='del-btn' data-del='"+r.id+"'>削除</button></div>";
     }
@@ -307,22 +324,30 @@ function renderDay(){
 function renderTL(){
   var ds=fmtD(curDay);var day=rsvsByDate(ds);var html="";
   html="<thead><tr><th style='min-width:110px;text-align:left;padding-left:4px'>席</th>";
-  for(var i=0;i<HOURS.length;i++)html+="<th>"+HOURS[i]+"</th>";
+  for(var i=0;i<HOURS.length;i++) html+="<th>"+HOURS[i]+"</th>";
   html+="</tr></thead><tbody>";
   for(var si=0;si<SEATS.length;si++){
     var s=SEATS[si];var totalPax=0;
     var ex=day.filter(function(r){return r.seat===s.id;});
-    for(var ri=0;ri<ex.length;ri++)totalPax+=parseInt(ex[ri].pax)||0;
+    for(var ri=0;ri<ex.length;ri++) totalPax+=parseInt(ex[ri].pax)||0;
     var maxPax=s.id==="counter"?8:s.id==="sofa-s"?10:12;
     var col=totalPax>=maxPax?"#b05050":totalPax>=maxPax*0.75?"#c8903a":s.color;
     html+="<tr><td class='tl-lbl'>"+s.name+"<div class='tl-lbl-sub'>"+s.cap+"</div>"
-      +"<div class='tl-lbl-avail' style='color:"+col+"'>"+totalPax+"/"+maxPax+"名</div></td>";
+      +"<div class='tl-lbl-avail' style='color:"+col+"'>本日 "+totalPax+"/"+maxPax+"名</div></td>";
     for(var hi=0;hi<HOURS.length;hi++){
-      var time=HOURS[hi];var m=ex.filter(function(r){return r.time===time;});
+      var time=HOURS[hi];
+      var m=ex.filter(function(r){return r.time===time;});
+      var inUse=isInUse(ds,time,s.id);
       var full=isFull(ds,time,s.id);
-      html+="<td class='tl-cell'"+(full?" style='background:#fdf0f0'":"")+">"; 
-      for(var mi=0;mi<m.length;mi++){html+="<div class='tl-block' style='background:"+s.color+"'><div class='tl-bname'>"+m[mi].name+"</div><div class='tl-bpax'>"+m[mi].pax+"名</div></div>";}
-      if(full)html+="<div class='full-badge'>満席</div>";
+      var cellClass="tl-cell"+(inUse?" in-use":"")+(full?" ":" ");
+      html+="<td class='"+cellClass+"'"+(full?" style='background:#fdf0f0'":"")+">"; 
+      for(var mi=0;mi<m.length;mi++){
+        html+="<div class='tl-block' style='background:"+s.color+"'>"
+          +"<div class='tl-bname'>"+m[mi].name+"</div>"
+          +"<div class='tl-bpax'>"+m[mi].pax+"名</div></div>";
+      }
+      if(inUse&&!m.length) html+="<div class='tl-using'>使用中</div>";
+      if(full&&!inUse) html+="<div class='full-badge'>満席</div>";
       html+="</td>";
     }
     html+="</tr>";
@@ -337,7 +362,11 @@ function renderWeek(){
     var list=rsvsByDate(ds);list.sort(function(a,b){return a.time<b.time?-1:1;});
     html+="<div class='week-col'><div class='week-col-head'><div class='week-col-dayname'>"+WEEK_NAMES[d.getDay()]+"</div><div class='week-col-num"+(isToday(d)?" is-today":"")+"'>"+d.getDate()+"</div></div><div class='week-col-body'>";
     if(!list.length){html+="<div class='week-none'>-</div>";}
-    else{var show=list.slice(0,4);for(var j=0;j<show.length;j++)html+="<div class='week-chip' style='background:"+getSeat(show[j].seat).color+"'>"+show[j].time+" "+show[j].name+"</div>";if(list.length>4)html+="<div class='week-more'>+他"+(list.length-4)+"件</div>";}
+    else{
+      var show=list.slice(0,4);
+      for(var j=0;j<show.length;j++) html+="<div class='week-chip' style='background:"+getSeat(show[j].seat).color+"'>"+show[j].time+" "+show[j].name+"</div>";
+      if(list.length>4) html+="<div class='week-more'>+他"+(list.length-4)+"件</div>";
+    }
     html+="</div></div>";
   }
   document.getElementById("week-grid").innerHTML=html;
@@ -347,19 +376,21 @@ function renderMonth(){
   var first=new Date(curMonth.getFullYear(),curMonth.getMonth(),1);
   var last=new Date(curMonth.getFullYear(),curMonth.getMonth()+1,0);
   var offset=first.getDay();var html="";
-  for(var i=0;i<offset;i++)html+="<div class='month-cell other'></div>";
+  for(var i=0;i<offset;i++) html+="<div class='month-cell other'></div>";
   for(var d=1;d<=last.getDate();d++){
     var date=new Date(curMonth.getFullYear(),curMonth.getMonth(),d);
     var ds=fmtD(date);var list=rsvsByDate(ds);list.sort(function(a,b){return a.time<b.time?-1:1;});
     var cls="month-cell"+(isToday(date)?" is-today":"")+(selMonthDay===ds?" selected":"");
     html+="<div class='"+cls+"' data-ds='"+ds+"'><div class='month-cell-num'>"+d+"</div>";
-    var show=list.slice(0,2);for(var j=0;j<show.length;j++)html+="<div class='month-chip' style='background:"+getSeat(show[j].seat).color+"'>"+show[j].time+" "+show[j].name+"</div>";
-    if(list.length>2)html+="<div class='month-more'>+他"+(list.length-2)+"件</div>";
+    var show=list.slice(0,2);
+    for(var j=0;j<show.length;j++) html+="<div class='month-chip' style='background:"+getSeat(show[j].seat).color+"'>"+show[j].time+" "+show[j].name+"</div>";
+    if(list.length>2) html+="<div class='month-more'>+他"+(list.length-2)+"件</div>";
     html+="</div>";
   }
-  var rem=(7-((offset+last.getDate())%7))%7;for(var j=0;j<rem;j++)html+="<div class='month-cell other'></div>";
+  var rem=(7-((offset+last.getDate())%7))%7;
+  for(var j=0;j<rem;j++) html+="<div class='month-cell other'></div>";
   document.getElementById("month-grid").innerHTML=html;
-  if(selMonthDay)renderMonthDetail(selMonthDay);
+  if(selMonthDay) renderMonthDetail(selMonthDay);
 }
 function clickMonthDay(ds){selMonthDay=(selMonthDay===ds)?null:ds;renderMonth();if(!selMonthDay)document.getElementById("month-detail").style.display="none";}
 function renderMonthDetail(ds){
@@ -373,27 +404,31 @@ function renderMonthDetail(ds){
   for(var i=0;i<list.length;i++){
     var r=list[i];var s=getSeat(r.seat);
     html+="<div class='card'><div class='dot' style='background:"+s.color+"'></div>"
-      +"<span class='c-time'>"+r.time+"</span><span class='c-name'>"+r.name+" 様</span>"
-      +"<span class='c-seat'>"+s.name+"</span><span class='c-pax'>"+r.pax+"名</span>"
+      +"<span class='c-time'>"+r.time+"〜"+endTime(r.time)+"</span>"
+      +"<span class='c-name'>"+r.name+" 様</span>"
+      +"<span class='c-seat'>"+s.name+"</span>"
+      +"<span class='c-pax'>"+r.pax+"名</span>"
       +"<span class='c-tel'>"+r.tel+"</span>"
       +"<button class='del-btn' data-del='"+r.id+"'>削除</button></div>";
   }
   panel.innerHTML=html;
 }
 
-function delRsv(id){if(!confirm("この予約を削除しますか？"))return;apiPost({action:"delete",id:id});if(curView==="month"&&selMonthDay)setTimeout(function(){renderMonthDetail(selMonthDay);},2000);}
-
+function delRsv(id){
+  if(!confirm("この予約を削除しますか？")) return;
+  apiPost({action:"delete",id:id});
+  if(curView==="month"&&selMonthDay) setTimeout(function(){renderMonthDetail(selMonthDay);},2000);
+}
 function checkCap(){
   var date=document.getElementById("m-date").value;
   var time=document.getElementById("m-time").value;
   var sid=document.getElementById("m-seat").value;
   var pax=parseInt(document.getElementById("m-pax").value)||1;
   var warn=document.getElementById("mwarn");var ok=document.getElementById("mok");
-  if(!date||!time)return;
-  if(!canBook(date,time,sid,pax)){warn.style.display="block";warn.textContent="この時間帯は満席です";ok.disabled=true;}
+  if(!date||!time) return;
+  if(!canBook(date,time,sid,pax)){warn.style.display="block";warn.textContent="この時間帯は満席です（90分制）";ok.disabled=true;}
   else{warn.style.display="none";ok.disabled=false;}
 }
-
 function openModal(){
   var dd=(curView==="month"&&selMonthDay)?selMonthDay:fmtD(curDay);
   document.getElementById("m-date").value=dd;
@@ -413,7 +448,7 @@ function addRsv(){
   var name=document.getElementById("m-name").value.trim();
   var tel=document.getElementById("m-tel").value.trim();
   if(!date||!name){alert("日付とお名前を入力してください");return;}
-  if(!canBook(date,time,sid,pax)){alert("満席のため追加できません");return;}
+  if(!canBook(date,time,sid,pax)){alert("満席のため追加できません（90分制）");return;}
   var ok=document.getElementById("mok");ok.disabled=true;
   apiPost({action:"add",date:date,time:time,seat:sid,pax:pax,name:name,tel:tel});
   closeModal();ok.disabled=false;
