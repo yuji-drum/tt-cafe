@@ -8,7 +8,7 @@
 <style>
 :root{--cream:#eae7de;--cream-dark:#d8d4c7;--green:#2a6b35;--green-dark:#1d4d26;--text:#2a3020;--text-mid:#4a5a40;--text-muted:#7a8a70;--white:#f5f3ee;}
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Jost','Hiragino Sans',sans-serif;background:var(--cream);color:var(--text);min-height:100vh;}
+body{font-family:'Jost','Hiragino Sans',sans-serif;background:var(--cream);color:var(--text);min-height:100vh;-webkit-text-size-adjust:100%;}
 .page{display:none;min-height:100vh;}
 .page.active{display:block;}
 .hero{text-align:center;padding:2.5rem 1rem 1.5rem;}
@@ -18,18 +18,16 @@ body{font-family:'Jost','Hiragino Sans',sans-serif;background:var(--cream);color
 .form-wrap{max-width:460px;margin:0 auto;padding:0 1.25rem 4rem;}
 .field{margin-bottom:1.3rem;}
 .field-label{display:block;font-family:'Jost',sans-serif;font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--green);margin-bottom:.45rem;}
-.field-input,.field-select{width:100%;background:var(--white);border:1px solid var(--cream-dark);color:var(--text);padding:.8rem 1rem;font-size:15px;font-family:'Jost',sans-serif;border-radius:2px;-webkit-appearance:none;}
-.field-input:focus,.field-select:focus{outline:none;border-color:var(--green);}
+.field-input,.field-select,.field-textarea{width:100%;background:var(--white);border:1px solid var(--cream-dark);color:var(--text);padding:.8rem 1rem;font-size:16px;font-family:'Jost',sans-serif;border-radius:2px;-webkit-appearance:none;}
+.field-textarea{resize:vertical;min-height:70px;}
+.field-input:focus,.field-select:focus,.field-textarea:focus{outline:none;border-color:var(--green);}
 .avail-section{margin-bottom:1.3rem;}
 .avail-title{font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--green);margin-bottom:.6rem;font-family:'Jost',sans-serif;}
 .avail-card{background:var(--white);border:1px solid var(--cream-dark);border-radius:3px;padding:.75rem 1rem;margin-bottom:8px;}
 .avail-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.4rem;}
 .avail-name{font-size:13px;font-family:'Jost',sans-serif;}
-.avail-count{font-family:'Cormorant Garamond',serif;font-size:15px;}
-.avail-n{color:var(--green-dark);font-weight:500;}
-.avail-d{color:var(--text-muted);font-size:12px;}
-.bar-wrap{background:var(--cream-dark);border-radius:2px;height:5px;overflow:hidden;margin-bottom:.3rem;}
-.bar-fill{height:5px;border-radius:2px;}
+.avail-count{font-family:'Cormorant Garamond',serif;font-size:18px;}
+.avail-n{font-weight:500;}
 .avail-cap{font-size:10px;color:var(--text-muted);font-family:'Jost',sans-serif;}
 .time-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
 .time-btn{background:var(--white);border:1px solid var(--cream-dark);color:var(--text-muted);padding:.5rem 0;font-size:12px;font-family:'Jost',sans-serif;border-radius:2px;cursor:pointer;text-align:center;}
@@ -43,7 +41,6 @@ body{font-family:'Jost','Hiragino Sans',sans-serif;background:var(--cream);color
 .seat-cap{font-size:11px;color:var(--text-muted);margin-top:2px;}
 .seat-avail{font-size:11px;margin-top:3px;}
 .seat-avail.ok{color:var(--green);}
-.seat-avail.low{color:#c8903a;}
 .seat-avail.zero{color:#b05050;}
 .submit-btn{width:100%;background:var(--green);border:none;color:var(--white);padding:1rem;font-size:12px;letter-spacing:.3em;text-transform:uppercase;font-family:'Jost',sans-serif;font-weight:500;border-radius:2px;cursor:pointer;margin-top:1.5rem;}
 .submit-btn:disabled{opacity:.5;cursor:not-allowed;}
@@ -73,7 +70,6 @@ body{font-family:'Jost','Hiragino Sans',sans-serif;background:var(--cream);color
 <div class="avail-section" id="avail-section" style="display:none">
   <div class="avail-title">Availability &mdash; 空き状況</div>
   <div id="avail-cards"></div>
-  <div style="font-size:10px;color:var(--text-muted);margin-top:.4rem;font-family:'Jost',sans-serif;">※ 時間帯によって異なります（席90分制）</div>
 </div>
 <div class="field">
   <label class="field-label">Time &mdash; ご希望時間</label>
@@ -81,12 +77,7 @@ body{font-family:'Jost','Hiragino Sans',sans-serif;background:var(--cream);color
 </div>
 <div class="field">
   <label class="field-label">Guests &mdash; 人数</label>
-  <select class="field-select" id="res-pax">
-    <option value="">選択してください</option>
-    <option value="1">1名</option><option value="2">2名</option>
-    <option value="3">3名</option><option value="4">4名</option>
-    <option value="5">5名</option><option value="6">6名</option>
-  </select>
+  <input type="number" class="field-input" id="res-pax" min="1" placeholder="人数を入力">
 </div>
 <div class="field" id="seat-wrap" style="display:none">
   <label class="field-label">Seating &mdash; 席タイプ</label>
@@ -100,8 +91,12 @@ body{font-family:'Jost','Hiragino Sans',sans-serif;background:var(--cream);color
   <label class="field-label">Tel &mdash; 電話番号</label>
   <input type="tel" class="field-input" id="res-tel" placeholder="090-0000-0000">
 </div>
+<div class="field">
+  <label class="field-label">Note &mdash; ご要望（任意）</label>
+  <textarea class="field-textarea" id="res-note" placeholder="アレルギー・記念日・ベビーカーなど"></textarea>
+</div>
 <button class="submit-btn" id="submit-btn">Confirm Reservation</button>
-<p class="notice">ご予約は前日まで受け付けております<br>当日・直前のご予約はお電話にて<br><a href="tel:080-8124-3905">080-8124-3905</a></p>
+<p class="notice">ご予約は前日まで受け付けております<br>当日・直前のご予約はお電話にて<br><a href="tel:080-8124-3905">080-8124-3905</a><br>ご利用は2時間制とさせていただきます</p>
 </div>
 </div>
 <div id="success-page" class="page">
@@ -113,157 +108,126 @@ body{font-family:'Jost','Hiragino Sans',sans-serif;background:var(--cream);color
 </div>
 </div>
 <script>
+(function() {
 var GAS = "https://script.google.com/macros/s/AKfycbynqCBFD9NciqgwvDFNcropcJeTAC6s-50fLEDYtlbNGPUEqWrAOyqV7zOYqiKlyKs/exec";
+
+var SOFA_S_TABLES = ["小1","小2"];
+var SOFA_L_TABLES = ["大1","大2"];
+var COUNTER_SEATS = 8;
+var SOFA_S_MAX = 5;
+var SOFA_L_MAX = 6;
+
 var SEATS = [
-  { id: "counter", name: "カウンター席", cap: "1〜2名様", min: 1, max: 2, type: "counter" },
-  { id: "sofa-s",  name: "ソファ席（〜5名）", cap: "2〜5名様", min: 2, max: 5, type: "sofa-s" },
-  { id: "sofa-l",  name: "ソファ席（〜6名）", cap: "2〜6名様", min: 2, max: 6, type: "sofa-l" }
+  { id: "counter", name: "カウンター席", cap: "1〜2名様", min: 1, max: 2 },
+  { id: "sofa-s",  name: "ソファ席（〜5名）", cap: "2〜5名様", min: 2, max: 10 },
+  { id: "sofa-l",  name: "ソファ席（〜6名）", cap: "2〜12名様", min: 2, max: 12 }
 ];
 
-// 受付時間: 11:00〜22:00（90分制）
+// 開始時間: 11:00〜22:00
 var HOURS = [];
-for (var h = 11; h <= 22; h++) {
-  HOURS.push(h + ":00");
-  if (h < 22) HOURS.push(h + ":30");
-}
-
-// 時間を分に変換
-function timeToMin(t) {
-  var parts = t.split(":");
-  return parseInt(parts[0]) * 60 + parseInt(parts[1]);
-}
-// 分を時間に変換
-function minToTime(m) {
-  return ("0" + Math.floor(m / 60)).slice(-2) + ":" + ("0" + (m % 60)).slice(-2);
-}
-
-// 90分制: 予約時間から90分間に重なるスロットを取得
-function getBlockedSlots(time) {
-  var start = timeToMin(time);
-  var end = start + 90;
-  var blocked = [];
-  for (var i = 0; i < HOURS.length; i++) {
-    var t = timeToMin(HOURS[i]);
-    // このスロットに来た客が使う時間(t〜t+90)と重なるか
-    if (t < end && t + 90 > start) {
-      blocked.push(HOURS[i]);
-    }
-  }
-  return blocked;
-}
-
-// 予約時間tに新たにpax名予約できるか
-// = tに来る客の使用時間(t〜t+90)と重なる既存予約を全部考慮
-function canBook(rsvs, date, time, seatType, pax) {
-  // timeに来た場合、影響するスロット（自分も含む）
-  var myStart = timeToMin(time);
-  var myEnd = myStart + 90;
-
-  // 既存予約の中で時間が重なるものを取得
-  var overlapping = [];
-  for (var i = 0; i < rsvs.length; i++) {
-    var r = rsvs[i];
-    if (r.date !== date || r.seat !== seatType) continue;
-    var rStart = timeToMin(r.time);
-    var rEnd = rStart + 90;
-    if (rStart < myEnd && rEnd > myStart) {
-      overlapping.push(parseInt(r.pax) || 0);
-    }
-  }
-
-  if (seatType === "counter") {
-    var total = 0;
-    for (var i = 0; i < overlapping.length; i++) total += overlapping[i];
-    return total + pax <= 8;
-  }
-  if (seatType === "sofa-s") return canFit(overlapping, pax, 5, 2);
-  if (seatType === "sofa-l") return canFit(overlapping, pax, 6, 2);
-  return false;
-}
-
-function canFit(existing, newPax, maxPerTable, tables) {
-  var slots = [];
-  for (var i = 0; i < tables; i++) slots.push(maxPerTable);
-  for (var i = 0; i < existing.length; i++) {
-    var placed = false;
-    for (var j = 0; j < slots.length; j++) {
-      if (slots[j] >= existing[i]) { slots[j] -= existing[i]; placed = true; break; }
-    }
-    if (!placed) return false;
-  }
-  for (var j = 0; j < slots.length; j++) {
-    if (slots[j] >= newPax) return true;
-  }
-  return false;
-}
-
-// 日全体の空き状況（最も空いている時間帯の空き数）
-function availDay(rsvs, date, seatType) {
-  var maxAvail = 0;
-  for (var i = 0; i < HOURS.length; i++) {
-    var t = HOURS[i];
-    // この時間に1名予約できるか
-    if (canBook(rsvs, date, t, seatType, 1)) {
-      // 何名まで予約できるか
-      var maxPax = seatType === "counter" ? 8 : seatType === "sofa-s" ? 5 : 6;
-      for (var p = maxPax; p >= 1; p--) {
-        if (canBook(rsvs, date, t, seatType, p)) {
-          if (p > maxAvail) maxAvail = p;
-          break;
-        }
-      }
-    }
-  }
-  return maxAvail;
-}
+for (var h = 11; h <= 22; h++) { HOURS.push(h+":00"); if (h < 22) HOURS.push(h+":30"); }
 
 var rsvCache = [];
 var selTime = null;
 var selSeat = null;
 var cbN = 0;
 
-function pad(n) { return ("0" + n).slice(-2); }
-function fmtD(d) { return d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate()); }
-function addDays(d, n) { var r = new Date(d); r.setDate(r.getDate() + n); return r; }
-function getSeat(sid) {
-  for (var i = 0; i < SEATS.length; i++) if (SEATS[i].id === sid) return SEATS[i];
-  return null;
+function pad(n) { return ("0"+n).slice(-2); }
+function fmtD(d) { return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
+function addDays(d,n) { var r=new Date(d); r.setDate(r.getDate()+n); return r; }
+function timeToMin(t) { if(!t) return 0; var p=t.split(":"); return parseInt(p[0])*60+parseInt(p[1]); }
+function minToTime(m) { return pad(Math.floor(m/60))+":"+pad(m%60); }
+function getSeat(sid) { for(var i=0;i<SEATS.length;i++) if(SEATS[i].id===sid) return SEATS[i]; return null; }
+function getEnd(r) { if(r.endtime) return r.endtime; return minToTime(timeToMin(r.time)+120); }
+function overlaps(s1,e1,s2,e2) { return s1<e2 && e1>s2; }
+
+// お客様予約は固定120分とする
+var STAY_MIN = 120;
+
+function isDayLocked(date) {
+  for (var i=0;i<rsvCache.length;i++) if(rsvCache[i].date===date && rsvCache[i].type==="lock") return true;
+  return false;
 }
+function isCharterAt(date,start,end) {
+  for(var i=0;i<rsvCache.length;i++){
+    var r=rsvCache[i];
+    if(r.date!==date||r.type!=="charter") continue;
+    if(overlaps(start,end,timeToMin(r.time),timeToMin(getEnd(r)))) return true;
+  }
+  return false;
+}
+function freeSofaTables(date,start,end,sofaType) {
+  var tables=sofaType==="sofa-s"?SOFA_S_TABLES:SOFA_L_TABLES;
+  var used={};
+  for(var i=0;i<rsvCache.length;i++){
+    var r=rsvCache[i];
+    if(r.date!==date||r.seat!==sofaType||!r.table) continue;
+    if(overlaps(start,end,timeToMin(r.time),timeToMin(getEnd(r)))){
+      var tbls=r.table.split(",");
+      for(var k=0;k<tbls.length;k++) used[tbls[k]]=true;
+    }
+  }
+  var free=[];
+  for(var j=0;j<tables.length;j++) if(!used[tables[j]]) free.push(tables[j]);
+  return free;
+}
+function counterAvail(date,start,end) {
+  var total=0;
+  for(var i=0;i<rsvCache.length;i++){
+    var r=rsvCache[i];
+    if(r.date!==date||r.seat!=="counter") continue;
+    if(overlaps(start,end,timeToMin(r.time),timeToMin(getEnd(r)))) total+=parseInt(r.pax)||0;
+  }
+  return COUNTER_SEATS-total;
+}
+function tryBook(date,time,seat,pax) {
+  var start=timeToMin(time); var end=start+STAY_MIN;
+  if(isDayLocked(date)) return {ok:false,reason:"満席"};
+  if(isCharterAt(date,start,end)) return {ok:false,reason:"貸切"};
+  if(seat==="counter"){
+    if(counterAvail(date,start,end)>=pax) return {ok:true,table:""};
+    return {ok:false,reason:"満席"};
+  }
+  if(seat==="sofa-s"){
+    var free=freeSofaTables(date,start,end,"sofa-s");
+    var need=Math.ceil(pax/SOFA_S_MAX);
+    if(free.length>=need) return {ok:true,table:free.slice(0,need).join(",")};
+    return {ok:false,reason:"満席"};
+  }
+  if(seat==="sofa-l"){
+    var free=freeSofaTables(date,start,end,"sofa-l");
+    var need=Math.ceil(pax/SOFA_L_MAX);
+    if(free.length>=need) return {ok:true,table:free.slice(0,need).join(",")};
+    return {ok:false,reason:"満席"};
+  }
+  return {ok:false,reason:"満席"};
+}
+
 function showPage(id) {
-  var pages = document.querySelectorAll(".page");
-  for (var i = 0; i < pages.length; i++) pages[i].classList.remove("active");
+  var pages=document.querySelectorAll(".page");
+  for(var i=0;i<pages.length;i++) pages[i].classList.remove("active");
   document.getElementById(id).classList.add("active");
 }
 function loadRsvs(cb) {
   cbN++;
-  var name = "cb" + cbN;
-  window[name] = function(data) {
-    rsvCache = Array.isArray(data) ? data : [];
-    var el = document.getElementById(name);
-    if (el) el.parentNode.removeChild(el);
-    delete window[name];
-    if (cb) cb();
-  };
-  var s = document.createElement("script");
-  s.id = name;
-  s.src = GAS + "?callback=" + name + "&t=" + Date.now();
-  document.head.appendChild(s);
+  var name="cb"+cbN;
+  window[name]=function(data){rsvCache=Array.isArray(data)?data:[];var el=document.getElementById(name);if(el)el.parentNode.removeChild(el);delete window[name];if(cb)cb();};
+  var s=document.createElement("script");s.id=name;s.src=GAS+"?callback="+name+"&t="+Date.now();document.head.appendChild(s);
 }
 
-var minD = addDays(new Date(), 1);
-document.getElementById("res-date").min = fmtD(minD);
+var minD=addDays(new Date(),1);
+document.getElementById("res-date").min=fmtD(minD);
 
-// 時間グリッド初期化
-var tg = document.getElementById("time-grid");
-for (var i = 0; i < HOURS.length; i++) {
-  (function(t) {
-    var b = document.createElement("button");
-    b.className = "time-btn"; b.textContent = t;
-    b.addEventListener("click", function() {
-      if (b.classList.contains("full")) return;
-      selTime = t;
-      var all = document.querySelectorAll(".time-btn");
-      for (var j = 0; j < all.length; j++) all[j].classList.remove("selected");
+var tg=document.getElementById("time-grid");
+for(var i=0;i<HOURS.length;i++){
+  (function(t){
+    var b=document.createElement("button");
+    b.className="time-btn";b.textContent=t;
+    b.addEventListener("click",function(){
+      if(b.classList.contains("full")) return;
+      selTime=t;
+      var all=document.querySelectorAll(".time-btn");
+      for(var j=0;j<all.length;j++) all[j].classList.remove("selected");
       b.classList.add("selected");
       updateSeatOpts();
     });
@@ -271,133 +235,149 @@ for (var i = 0; i < HOURS.length; i++) {
   })(HOURS[i]);
 }
 
-document.getElementById("res-date").addEventListener("change", function() {
-  selTime = null; selSeat = null;
-  var btns = document.querySelectorAll(".time-btn");
-  for (var i = 0; i < btns.length; i++) btns[i].classList.remove("selected", "full");
-  document.getElementById("res-pax").value = "";
-  document.getElementById("seat-wrap").style.display = "none";
-  var date = document.getElementById("res-date").value;
-  if (!date) { document.getElementById("avail-section").style.display = "none"; return; }
-  loadRsvs(function() {
+document.getElementById("res-date").addEventListener("change",function(){
+  selTime=null;selSeat=null;
+  var btns=document.querySelectorAll(".time-btn");
+  for(var i=0;i<btns.length;i++) btns[i].classList.remove("selected","full");
+  document.getElementById("res-pax").value="";
+  document.getElementById("seat-wrap").style.display="none";
+  var date=document.getElementById("res-date").value;
+  if(!date){document.getElementById("avail-section").style.display="none";return;}
+  loadRsvs(function(){
     renderAvail(date);
-    document.getElementById("avail-section").style.display = "block";
+    document.getElementById("avail-section").style.display="block";
   });
 });
+document.getElementById("res-pax").addEventListener("change",updateSeatOpts);
+document.getElementById("submit-btn").addEventListener("click",doSubmit);
 
-document.getElementById("res-pax").addEventListener("change", updateSeatOpts);
-document.getElementById("submit-btn").addEventListener("click", doSubmit);
-
-function renderAvail(date) {
-  var seatTypes = [
-    { id: "counter", name: "カウンター席", unit: "席空き（最大8名）" },
-    { id: "sofa-s",  name: "ソファ席（〜5名）", unit: "名まで受付可" },
-    { id: "sofa-l",  name: "ソファ席（〜6名）", unit: "名まで受付可" }
-  ];
-  var html = "";
-  for (var i = 0; i < seatTypes.length; i++) {
-    var s = seatTypes[i];
-    var avail = availDay(rsvCache, date, s.id);
-    var bc = avail <= 0 ? "#b05050" : avail <= 2 ? "#c8903a" : "#2a6b35";
-    html += "<div class='avail-card'>"
-      + "<div class='avail-top'><span class='avail-name'>" + s.name + "</span>"
-      + "<span class='avail-count'><span class='avail-n' style='color:" + bc + "'>" + avail + "</span><span class='avail-d'> " + s.unit + "</span></span></div>"
-      + "<div class='avail-cap'>席90分制</div></div>";
+function renderAvail(date){
+  if(isDayLocked(date)){
+    document.getElementById("avail-cards").innerHTML="<div class='avail-card' style='text-align:center;color:#b05050'>この日は満席です</div>";
+    return;
   }
-  document.getElementById("avail-cards").innerHTML = html;
-}
-
-function refreshTimeBtns() {
-  var date = document.getElementById("res-date").value;
-  var pax = parseInt(document.getElementById("res-pax").value) || 1;
-  var btns = document.querySelectorAll(".time-btn");
-  for (var i = 0; i < btns.length; i++) {
-    btns[i].classList.remove("full");
-    if (date && selSeat) {
-      if (!canBook(rsvCache, date, HOURS[i], selSeat, pax)) {
-        btns[i].classList.add("full");
+  var defs=[
+    {id:"counter",name:"カウンター席",unit:"席"},
+    {id:"sofa-s",name:"ソファ席（〜5名）",unit:"卓"},
+    {id:"sofa-l",name:"ソファ席（〜6名）",unit:"卓"}
+  ];
+  var html="";
+  for(var i=0;i<defs.length;i++){
+    var d=defs[i];
+    // 最も空いている時間帯の空き
+    var maxAvail=0;
+    for(var hi=0;hi<HOURS.length;hi++){
+      var start=timeToMin(HOURS[hi]);var end=start+STAY_MIN;
+      if(isCharterAt(date,start,end)) continue;
+      if(d.id==="counter"){
+        var a=counterAvail(date,start,end);
+        if(a>maxAvail) maxAvail=a;
+      } else {
+        var free=freeSofaTables(date,start,end,d.id);
+        if(free.length>maxAvail) maxAvail=free.length;
       }
     }
-    if (HOURS[i] === selTime) btns[i].classList.add("selected");
+    var bc=maxAvail<=0?"#b05050":maxAvail<=1?"#c8903a":"#2a6b35";
+    html+="<div class='avail-card'><div class='avail-top'>"
+      +"<span class='avail-name'>"+d.name+"</span>"
+      +"<span class='avail-count'><span class='avail-n' style='color:"+bc+"'>"+(maxAvail>0?"○":"×")+"</span></span></div>"
+      +"<div class='avail-cap'>"+(maxAvail>0?"空きあり":"満席")+"</div></div>";
+  }
+  document.getElementById("avail-cards").innerHTML=html;
+}
+
+function refreshTimeBtns(){
+  var date=document.getElementById("res-date").value;
+  var pax=parseInt(document.getElementById("res-pax").value)||1;
+  var btns=document.querySelectorAll(".time-btn");
+  for(var i=0;i<btns.length;i++){
+    btns[i].classList.remove("full");
+    if(date&&selSeat){
+      if(!tryBook(date,HOURS[i],selSeat,pax).ok) btns[i].classList.add("full");
+    }
+    if(HOURS[i]===selTime) btns[i].classList.add("selected");
   }
 }
 
-function updateSeatOpts() {
-  var p = parseInt(document.getElementById("res-pax").value);
-  var date = document.getElementById("res-date").value;
-  if (!p) { document.getElementById("seat-wrap").style.display = "none"; return; }
-  document.getElementById("seat-wrap").style.display = "block";
-  selSeat = null;
-  var c = document.getElementById("seat-opts"); c.innerHTML = "";
-  for (var i = 0; i < SEATS.length; i++) {
-    (function(s) {
-      if (p < s.min || p > s.max) return;
-      var canB = selTime ? canBook(rsvCache, date, selTime, s.id, p) : availDay(rsvCache, date, s.id) >= p;
-      var avail = selTime ? (canBook(rsvCache, date, selTime, s.id, p) ? "受付可" : "満席") : availDay(rsvCache, date, s.id) + "名まで受付可";
-      var cls = canB ? "ok" : "zero";
-      var b = document.createElement("button");
-      b.className = "seat-btn" + (canB ? "" : " full");
-      b.innerHTML = "<div class='seat-name'>" + s.name + "</div>"
-        + "<div class='seat-cap'>" + s.cap + " / 席90分制</div>"
-        + "<div class='seat-avail " + cls + "'>" + avail + "</div>";
-      if (canB) {
-        b.addEventListener("click", (function(sid) { return function() {
-          selSeat = sid;
-          var all = document.querySelectorAll(".seat-btn");
-          for (var j = 0; j < all.length; j++) all[j].classList.remove("selected");
+function updateSeatOpts(){
+  var p=parseInt(document.getElementById("res-pax").value);
+  var date=document.getElementById("res-date").value;
+  if(!p){document.getElementById("seat-wrap").style.display="none";return;}
+  document.getElementById("seat-wrap").style.display="block";
+  selSeat=null;
+  var c=document.getElementById("seat-opts");c.innerHTML="";
+  for(var i=0;i<SEATS.length;i++){
+    (function(s){
+      if(p<s.min||p>s.max) return;
+      var canB=true;
+      if(selTime) canB=tryBook(date,selTime,s.id,p).ok;
+      else {
+        // いずれかの時間で予約可能か
+        canB=false;
+        for(var hi=0;hi<HOURS.length;hi++){ if(tryBook(date,HOURS[hi],s.id,p).ok){canB=true;break;} }
+      }
+      var b=document.createElement("button");
+      b.className="seat-btn"+(canB?"":" full");
+      b.innerHTML="<div class='seat-name'>"+s.name+"</div>"
+        +"<div class='seat-cap'>"+s.cap+"</div>"
+        +"<div class='seat-avail "+(canB?"ok":"zero")+"'>"+(canB?"空きあり":"満席")+"</div>";
+      if(canB){
+        b.addEventListener("click",(function(sid){return function(){
+          selSeat=sid;
+          var all=document.querySelectorAll(".seat-btn");
+          for(var j=0;j<all.length;j++) all[j].classList.remove("selected");
           b.classList.add("selected");
           refreshTimeBtns();
-        }; })(s.id));
+        };})(s.id));
       }
       c.appendChild(b);
     })(SEATS[i]);
   }
 }
 
-function doSubmit() {
-  var date = document.getElementById("res-date").value;
-  var pax = parseInt(document.getElementById("res-pax").value);
-  var name = document.getElementById("res-name").value.trim();
-  var tel = document.getElementById("res-tel").value.trim();
-  if (!date || !selTime || !pax || !selSeat || !name || !tel) {
-    alert("すべての項目を入力してください。"); return;
-  }
-  var today = new Date(); today.setHours(0, 0, 0, 0);
-  if (Math.round((new Date(date) - today) / 86400000) < 1) {
-    alert("当日・直前のご予約はお電話にて承ります。080-8124-3905"); return;
-  }
-  if (!canBook(rsvCache, date, selTime, selSeat, pax)) {
-    alert("満席です。別の時間または席をお選びください。"); return;
-  }
-  var s = getSeat(selSeat);
-  var btn = document.getElementById("submit-btn");
-  btn.disabled = true; btn.textContent = "送信中...";
-  fetch(GAS, {
-    method: "POST", mode: "no-cors",
-    body: JSON.stringify({ action: "add", date: date, time: selTime, seat: selSeat, pax: pax, name: name, tel: tel })
-  }).then(function() {
-    var W = ["日","月","火","水","木","金","土"];
-    var d = new Date(date + "T00:00:00");
-    var dlbl = (d.getMonth()+1) + "月" + d.getDate() + "日(" + W[d.getDay()] + ")";
-    document.getElementById("success-detail").innerHTML = dlbl + "<br>" + selTime + "〜<br>" + s.name + "<br>" + pax + "名様<br><br>" + name + " 様";
+function doSubmit(){
+  var date=document.getElementById("res-date").value;
+  var pax=parseInt(document.getElementById("res-pax").value);
+  var name=document.getElementById("res-name").value.trim();
+  var tel=document.getElementById("res-tel").value.trim();
+  var note=document.getElementById("res-note").value.trim();
+  if(!date||!selTime||!pax||!selSeat||!name||!tel){alert("必須項目をすべて入力してください。");return;}
+  var today=new Date();today.setHours(0,0,0,0);
+  if(Math.round((new Date(date)-today)/86400000)<1){alert("当日・直前のご予約はお電話にて承ります。080-8124-3905");return;}
+  var res=tryBook(date,selTime,selSeat,pax);
+  if(!res.ok){alert("満席です。別の時間または席をお選びください。");return;}
+  var s=getSeat(selSeat);
+  var endtime=minToTime(timeToMin(selTime)+STAY_MIN);
+  var btn=document.getElementById("submit-btn");
+  btn.disabled=true;btn.textContent="送信中...";
+  fetch(GAS,{method:"POST",mode:"no-cors",body:JSON.stringify({
+    action:"add",date:date,time:selTime,endtime:endtime,seat:selSeat,table:res.table,
+    pax:pax,name:name,tel:tel,note:note,type:"normal"
+  })}).then(function(){
+    var W=["日","月","火","水","木","金","土"];
+    var d=new Date(date+"T00:00:00");
+    var dlbl=(d.getMonth()+1)+"月"+d.getDate()+"日("+W[d.getDay()]+")";
+    document.getElementById("success-detail").innerHTML=dlbl+"<br>"+selTime+"〜<br>"+s.name+"<br>"+pax+"名様<br><br>"+name+" 様";
     showPage("success-page");
-    setTimeout(function() { showPage("form-page"); resetForm(); }, 6000);
-  }).catch(function() {
+    setTimeout(function(){showPage("form-page");resetForm();},6000);
+  }).catch(function(){
     alert("送信に失敗しました。再度お試しください。");
-    btn.disabled = false; btn.textContent = "Confirm Reservation";
+    btn.disabled=false;btn.textContent="Confirm Reservation";
   });
 }
 
-function resetForm() {
-  ["res-date","res-pax","res-name","res-tel"].forEach(function(id) { document.getElementById(id).value = ""; });
-  selTime = null; selSeat = null;
-  var btns = document.querySelectorAll(".time-btn");
-  for (var i = 0; i < btns.length; i++) btns[i].classList.remove("selected", "full");
-  document.getElementById("seat-wrap").style.display = "none";
-  document.getElementById("avail-section").style.display = "none";
-  var btn = document.getElementById("submit-btn");
-  btn.disabled = false; btn.textContent = "Confirm Reservation";
+function resetForm(){
+  ["res-date","res-pax","res-name","res-tel","res-note"].forEach(function(id){document.getElementById(id).value="";});
+  selTime=null;selSeat=null;
+  var btns=document.querySelectorAll(".time-btn");
+  for(var i=0;i<btns.length;i++) btns[i].classList.remove("selected","full");
+  document.getElementById("seat-wrap").style.display="none";
+  document.getElementById("avail-section").style.display="none";
+  var btn=document.getElementById("submit-btn");
+  btn.disabled=false;btn.textContent="Confirm Reservation";
 }
+})();
+
 </script>
 </body>
 </html>
