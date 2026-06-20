@@ -50,7 +50,7 @@ body{font-family:'Jost','Hiragino Sans',sans-serif;background:#f0ede6;color:var(
 .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
 .c-time{font-family:'Cormorant Garamond',serif;font-size:15px;color:var(--green-dark);min-width:90px;}
 .c-name{font-size:14px;flex:1;font-family:'Jost',sans-serif;min-width:70px;}
-.c-seat{font-size:11px;color:var(--text-muted);min-width:90px;font-family:'Jost',sans-serif;}
+.c-seat{font-size:11px;color:var(--text-muted);min-width:110px;font-family:'Jost',sans-serif;}
 .c-pax{font-family:'Cormorant Garamond',serif;font-size:15px;color:var(--text-mid);min-width:28px;text-align:right;}
 .c-tel{font-size:11px;color:var(--text-muted);font-family:'Jost',sans-serif;}
 .edit-btn{background:none;border:1px solid var(--green);color:var(--green);padding:.18rem .5rem;border-radius:2px;cursor:pointer;font-size:10px;margin-left:auto;font-family:'Jost',sans-serif;}
@@ -59,9 +59,9 @@ body{font-family:'Jost','Hiragino Sans',sans-serif;background:#f0ede6;color:var(
 .tl-outer{overflow-x:auto;-webkit-overflow-scrolling:touch;}
 .tl-table{min-width:1000px;border-collapse:collapse;width:100%;background:var(--white);}
 .tl-table th{font-size:10px;color:var(--text-muted);font-weight:400;padding:.35rem .2rem;text-align:center;border-bottom:1px solid var(--cream-dark);}
-.tl-lbl{font-size:11px;color:var(--text-mid);padding:.5rem .5rem .5rem 4px;vertical-align:middle;white-space:nowrap;border-bottom:1px solid var(--cream-dark);min-width:90px;}
-.tl-lbl-sub{font-size:9px;color:var(--text-muted);}
-.tl-cell{border-bottom:1px solid var(--cream-dark);border-left:1px solid #e6e2d8;padding:1px;vertical-align:top;height:46px;min-width:42px;position:relative;}
+.tl-lbl{font-size:11px;color:var(--text-mid);padding:.4rem .5rem .4rem 4px;vertical-align:middle;white-space:nowrap;border-bottom:1px solid var(--cream-dark);min-width:60px;font-weight:500;}
+.tl-lbl-sub{font-size:9px;color:var(--text-muted);font-weight:400;}
+.tl-cell{border-bottom:1px solid var(--cream-dark);border-left:1px solid #e6e2d8;padding:1px;vertical-align:top;height:40px;min-width:42px;position:relative;}
 .tl-block{border-radius:2px;padding:2px 4px;margin-bottom:1px;cursor:pointer;}
 .tl-bname{font-size:9px;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60px;}
 .tl-bpax{font-size:8px;color:rgba(245,243,238,.85);}
@@ -134,9 +134,9 @@ body{font-family:'Jost','Hiragino Sans',sans-serif;background:#f0ede6;color:var(
 <div class="body">
 <div class="summary" id="summary"></div>
 <div class="legend">
-  <div class="leg-item"><div class="leg-pip" style="background:#4a8fa8"></div>カウンター席</div>
-  <div class="leg-item"><div class="leg-pip" style="background:#7a6e9e"></div>ソファ(〜5名)</div>
-  <div class="leg-item"><div class="leg-pip" style="background:#5a8f5a"></div>ソファ(〜6名)</div>
+  <div class="leg-item"><div class="leg-pip" style="background:#4a8fa8"></div>カウンター</div>
+  <div class="leg-item"><div class="leg-pip" style="background:#5a8f5a"></div>ソファ</div>
+  <div class="leg-item"><div class="leg-pip" style="background:#c88a4a"></div>テラス</div>
   <div class="leg-item"><div class="leg-pip" style="background:#c8903a"></div>貸切</div>
 </div>
 <div id="view-day"   class="view-panel"><div id="day-list"></div></div>
@@ -165,12 +165,14 @@ body{font-family:'Jost','Hiragino Sans',sans-serif;background:#f0ede6;color:var(
   <label class="mlabel">席タイプ</label>
   <select class="mselect" id="m-seat">
     <option value="counter">カウンター席</option>
-    <option value="sofa-s">ソファ席（〜5名）</option>
-    <option value="sofa-l">ソファ席（〜6名）</option>
+    <option value="sofa">ソファ席</option>
+    <option value="terrace">テラス席</option>
   </select>
   <div class="mwarn" id="mwarn"></div>
   <label class="mlabel">人数</label>
   <input type="number" class="minput" id="m-pax" min="1" value="2">
+  <label class="mlabel">卓（自動割当・変更可）</label>
+  <select class="mselect" id="m-table"></select>
   <label class="mlabel">お名前</label>
   <input type="text" class="minput" id="m-name" placeholder="山田 太郎">
   <label class="mlabel">電話番号</label>
@@ -204,24 +206,38 @@ body{font-family:'Jost','Hiragino Sans',sans-serif;background:#f0ede6;color:var(
 (function() {
 var GAS = "https://script.google.com/macros/s/AKfycbynqCBFD9NciqgwvDFNcropcJeTAC6s-50fLEDYtlbNGPUEqWrAOyqV7zOYqiKlyKs/exec";
 
-// 席・卓構成
-var SOFA_S_TABLES = ["小1","小2"];  // MAX5名
-var SOFA_L_TABLES = ["大1","大2"];  // MAX6名
-var COUNTER_SEATS = 8;
-var SOFA_S_MAX = 5;
-var SOFA_L_MAX = 6;
-
-var SEATS = [
-  { id:"counter", name:"カウンター席",    cap:"1〜2名様", color:"#4a8fa8" },
-  { id:"sofa-s",  name:"ソファ席(〜5名)", cap:"2〜5名様", color:"#7a6e9e" },
-  { id:"sofa-l",  name:"ソファ席(〜6名)", cap:"2〜6名様", color:"#5a8f5a" }
+// ===== 卓マスター =====
+var TABLES = [
+  { id:"T1", group:"sofa",    cap:6, color:"#5a8f5a" },
+  { id:"T2", group:"sofa",    cap:6, color:"#5a8f5a" },
+  { id:"T4", group:"sofa",    cap:5, color:"#5a8f5a" },
+  { id:"T5", group:"sofa",    cap:5, color:"#5a8f5a" },
+  { id:"T3", group:"sofa",    cap:2, color:"#5a8f5a" },
+  { id:"C1", group:"counter", cap:1, color:"#4a8fa8" },
+  { id:"C2", group:"counter", cap:1, color:"#4a8fa8" },
+  { id:"C3", group:"counter", cap:1, color:"#4a8fa8" },
+  { id:"C4", group:"counter", cap:1, color:"#4a8fa8" },
+  { id:"C5", group:"counter", cap:1, color:"#4a8fa8" },
+  { id:"C6", group:"counter", cap:1, color:"#4a8fa8" },
+  { id:"C7", group:"terrace", cap:4, color:"#c88a4a" },
+  { id:"C8", group:"terrace", cap:4, color:"#c88a4a" }
 ];
-var ALL_TABLES = ["小1","小2","大1","大2"];
-var WEEK_NAMES = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+// TLの行順
+var TL_ORDER = ["C1","C2","C3","C4","C5","C6","C7","C8","T1","T2","T3","T4","T5"];
+var GROUPS = [
+  { id:"counter", name:"カウンター席", color:"#4a8fa8", tables:["C1","C2","C3","C4","C5","C6"] },
+  { id:"sofa",    name:"ソファ席",     color:"#5a8f5a", tables:["T1","T2","T4","T5","T3"] },
+  { id:"terrace", name:"テラス席",     color:"#c88a4a", tables:["C7","C8"] }
+];
 
+function tableById(id){ for(var i=0;i<TABLES.length;i++) if(TABLES[i].id===id) return TABLES[i]; return null; }
+function groupById(id){ for(var i=0;i<GROUPS.length;i++) if(GROUPS[i].id===id) return GROUPS[i]; return null; }
+function groupName(id){ var g=groupById(id); return g?g.name:id; }
+function groupColor(id){ var g=groupById(id); return g?g.color:"#aaa"; }
+
+var WEEK_NAMES = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 var HOURS = [];
 for (var h = 11; h <= 22; h++) { HOURS.push(h+":00"); if (h < 22) HOURS.push(h+":30"); }
-// 終了時刻用（23:00まで）
 var END_HOURS = [];
 for (var h = 11; h <= 23; h++) { END_HOURS.push(h+":00"); if (h < 23) END_HOURS.push(h+":30"); }
 
@@ -238,98 +254,73 @@ function isToday(d) { return fmtD(d)===fmtD(new Date()); }
 function fmtLabel(d) { var W=["日","月","火","水","木","金","土"]; return (d.getMonth()+1)+"月"+d.getDate()+"日("+W[d.getDay()]+")"; }
 function fmtWeekLabel(s) { var e=addDays(s,6); return (s.getMonth()+1)+"/"+s.getDate()+" 〜 "+(e.getMonth()+1)+"/"+e.getDate(); }
 function fmtMonthLabel(d) { return d.getFullYear()+"年"+(d.getMonth()+1)+"月"; }
-function getSeat(sid) { for(var i=0;i<SEATS.length;i++) if(SEATS[i].id===sid) return SEATS[i]; return{id:sid,name:sid,cap:"",color:"#aaa"}; }
 function rsvsByDate(ds) { var out=[]; for(var i=0;i<rsvCache.length;i++) if(rsvCache[i].date===ds) out.push(rsvCache[i]); return out; }
 
 function timeToMin(t) { if(!t) return 0; var p=t.split(":"); return parseInt(p[0])*60+parseInt(p[1]); }
 function minToTime(m) { return pad(Math.floor(m/60))+":"+pad(m%60); }
-// 終了時刻（デフォルト120分）
-function getEnd(r) {
-  if (r.endtime) return r.endtime;
-  return minToTime(timeToMin(r.time) + 120);
-}
-// 2つの時間範囲が重なるか
-function overlaps(s1, e1, s2, e2) {
-  return s1 < e2 && e1 > s2;
+function getEnd(r) { if(r.endtime) return r.endtime; return minToTime(timeToMin(r.time)+120); }
+function overlaps(s1,e1,s2,e2) { return s1<e2 && e1>s2; }
+
+// 旧データのseat→group変換
+function normalizeGroup(seat) {
+  if (seat==="counter") return "counter";
+  if (seat==="sofa"||seat==="sofa-s"||seat==="sofa-l") return "sofa";
+  if (seat==="terrace") return "terrace";
+  if (seat==="charter") return "charter";
+  return seat;
 }
 
-// その日がロックされているか
 function isDayLocked(date) {
-  for (var i = 0; i < rsvCache.length; i++) {
-    if (rsvCache[i].date === date && rsvCache[i].type === "lock") return true;
+  for (var i=0;i<rsvCache.length;i++) if(rsvCache[i].date===date && rsvCache[i].type==="lock") return true;
+  return false;
+}
+function isCharterAt(date,start,end) {
+  for(var i=0;i<rsvCache.length;i++){
+    var r=rsvCache[i];
+    if(r.date!==date||r.type!=="charter") continue;
+    if(overlaps(start,end,timeToMin(r.time),timeToMin(getEnd(r)))) return true;
   }
   return false;
 }
-// 貸切が時間に重なるか
-function isCharterAt(date, start, end) {
-  for (var i = 0; i < rsvCache.length; i++) {
-    var r = rsvCache[i];
-    if (r.date !== date || r.type !== "charter") continue;
-    if (overlaps(start, end, timeToMin(r.time), timeToMin(getEnd(r)))) return true;
-  }
-  return false;
-}
-
-// 指定時間範囲で空いているソファ卓を返す
-function freeSofaTables(date, start, end, sofaType, excludeId) {
-  var tables = sofaType === "sofa-s" ? SOFA_S_TABLES : SOFA_L_TABLES;
-  var used = {};
-  for (var i = 0; i < rsvCache.length; i++) {
-    var r = rsvCache[i];
-    if (r.date !== date || r.seat !== sofaType) continue;
-    if (excludeId && String(r.id) === String(excludeId)) continue;
-    if (!r.table) continue;
-    if (overlaps(start, end, timeToMin(r.time), timeToMin(getEnd(r)))) {
-      used[r.table] = true;
+// 指定時間に使用中の卓idセット
+function usedTablesAt(date,start,end,excludeId) {
+  var used={};
+  for(var i=0;i<rsvCache.length;i++){
+    var r=rsvCache[i];
+    if(r.date!==date) continue;
+    if(r.type==="lock") continue;
+    if(excludeId && String(r.id)===String(excludeId)) continue;
+    if(!overlaps(start,end,timeToMin(r.time),timeToMin(getEnd(r)))) continue;
+    if(r.table){
+      var tbls=r.table.split(",");
+      for(var k=0;k<tbls.length;k++) used[tbls[k].trim()]=true;
     }
   }
-  var free = [];
-  for (var j = 0; j < tables.length; j++) if (!used[tables[j]]) free.push(tables[j]);
-  return free;
+  return used;
 }
-
-// カウンターの空き席数
-function counterAvail(date, start, end, excludeId) {
-  var total = 0;
-  for (var i = 0; i < rsvCache.length; i++) {
-    var r = rsvCache[i];
-    if (r.date !== date || r.seat !== "counter") continue;
-    if (excludeId && String(r.id) === String(excludeId)) continue;
-    if (overlaps(start, end, timeToMin(r.time), timeToMin(getEnd(r)))) {
-      total += parseInt(r.pax) || 0;
-    }
-  }
-  return COUNTER_SEATS - total;
+// 自動割当
+function assignTables(date,start,end,group,pax,excludeId) {
+  var used=usedTablesAt(date,start,end,excludeId);
+  var g=groupById(group);
+  if(!g) return null;
+  var ordered=[];
+  for(var i=0;i<g.tables.length;i++){ if(!used[g.tables[i]]) ordered.push(tableById(g.tables[i])); }
+  // 1卓で収まる最小卓
+  var fit=null;
+  for(var i=0;i<ordered.length;i++){ if(ordered[i].cap>=pax){ fit=ordered[i]; break; } }
+  if(fit) return [fit.id];
+  // 複数卓
+  var assigned=[]; var remaining=pax;
+  for(var i=0;i<ordered.length;i++){ assigned.push(ordered[i].id); remaining-=ordered[i].cap; if(remaining<=0) return assigned; }
+  return null;
 }
-
-// 予約可能かチェック＋卓割当を返す
-function tryBook(date, time, endtime, seat, pax, excludeId) {
-  var start = timeToMin(time);
-  var end = timeToMin(endtime);
-  if (isDayLocked(date)) return { ok: false, reason: "本日はロックされています" };
-  if (isCharterAt(date, start, end)) return { ok: false, reason: "貸切時間帯です" };
-
-  if (seat === "counter") {
-    if (counterAvail(date, start, end, excludeId) >= pax) return { ok: true, table: "" };
-    return { ok: false, reason: "カウンター満席" };
-  }
-  if (seat === "sofa-s") {
-    var maxP = SOFA_S_MAX;
-    if (pax > maxP * SOFA_S_TABLES.length) return { ok: false, reason: "人数超過" };
-    var free = freeSofaTables(date, start, end, "sofa-s", excludeId);
-    var need = Math.ceil(pax / maxP);
-    if (free.length >= need) return { ok: true, table: free.slice(0, need).join(",") };
-    return { ok: false, reason: "ソファ満席" };
-  }
-  if (seat === "sofa-l") {
-    var maxP = SOFA_L_MAX;
-    if (pax > maxP * SOFA_L_TABLES.length) return { ok: false, reason: "人数超過" };
-    var free = freeSofaTables(date, start, end, "sofa-l", excludeId);
-    var need = Math.ceil(pax / maxP);
-    if (free.length >= need) return { ok: true, table: free.slice(0, need).join(",") };
-    return { ok: false, reason: "ソファ満席" };
-  }
-  return { ok: false, reason: "不明な席" };
+function tryBook(date,time,endtime,group,pax,excludeId) {
+  var start=timeToMin(time), end=timeToMin(endtime);
+  if(isDayLocked(date)) return {ok:false,reason:"本日はロックされています"};
+  if(isCharterAt(date,start,end)) return {ok:false,reason:"貸切時間帯です"};
+  var tables=assignTables(date,start,end,group,pax,excludeId);
+  if(!tables) return {ok:false,reason:groupName(group)+"満席"};
+  return {ok:true,table:tables.join(",")};
 }
 
 function setStatus(ok){var dot=document.getElementById("status-dot");var txt=document.getElementById("status-txt");dot.className="status-dot "+(ok?"online":"offline");txt.textContent=ok?"オンライン":"オフライン";}
@@ -340,21 +331,12 @@ function loadRsvs(){
 }
 function apiPost(body){fetch(GAS,{method:"POST",mode:"no-cors",body:JSON.stringify(body)}).then(function(){setTimeout(loadRsvs,1500);}).catch(function(){setStatus(false);});}
 
-// 時間セレクト初期化
-function fillTimeSelect(sel, list) {
-  sel.innerHTML = "";
-  for (var i = 0; i < list.length; i++) {
-    var o = document.createElement("option");
-    o.value = list[i]; o.textContent = list[i];
-    sel.appendChild(o);
-  }
-}
+function fillTimeSelect(sel,list){ sel.innerHTML=""; for(var i=0;i<list.length;i++){var o=document.createElement("option");o.value=list[i];o.textContent=list[i];sel.appendChild(o);} }
 fillTimeSelect(document.getElementById("m-time"), HOURS);
 fillTimeSelect(document.getElementById("m-endtime"), END_HOURS);
 fillTimeSelect(document.getElementById("ch-start"), HOURS);
 fillTimeSelect(document.getElementById("ch-end"), END_HOURS);
 
-// イベント登録
 document.getElementById("tab-day").addEventListener("click",function(){setView("day");});
 document.getElementById("tab-tl").addEventListener("click",function(){setView("tl");});
 document.getElementById("tab-week").addEventListener("click",function(){setView("week");});
@@ -380,9 +362,9 @@ document.getElementById("month-grid").addEventListener("click",function(e){var c
   var el=document.getElementById(id);
   if(el)el.addEventListener("click",function(e){
     var del=e.target.closest("[data-del]");
-    if(del){delRsv(Number(del.getAttribute("data-del")));return;}
+    if(del){delRsv(del.getAttribute("data-del"));return;}
     var edit=e.target.closest("[data-edit]");
-    if(edit){openModal(edit.getAttribute("data-edit"));return;}
+    if(edit){var eid=edit.getAttribute("data-edit");if(eid)openModal(eid);return;}
   });
 });
 
@@ -402,33 +384,35 @@ function renderLockBtn(){
 
 function renderSummary(){
   var ds=fmtD(curView==="day"||curView==="tl"?curDay:new Date());
-  var defs=[{id:"counter",name:"カウンター",max:8},{id:"sofa-s",name:"ソファ(小)",max:10},{id:"sofa-l",name:"ソファ(大)",max:12}];
   var html="";
-  for(var i=0;i<defs.length;i++){
-    var d=defs[i];var used=0;
-    var ex=rsvsByDate(ds).filter(function(r){return r.seat===d.id&&r.type==="normal";});
+  for(var gi=0;gi<GROUPS.length;gi++){
+    var g=GROUPS[gi];
+    var maxPax=0;
+    for(var ti=0;ti<g.tables.length;ti++) maxPax+=tableById(g.tables[ti]).cap;
+    var used=0;
+    var ex=rsvsByDate(ds).filter(function(r){return normalizeGroup(r.seat)===g.id && r.type==="normal";});
     for(var j=0;j<ex.length;j++) used+=parseInt(ex[j].pax)||0;
-    var pct=Math.min(100,Math.round(used/d.max*100));
-    var bc=pct>=100?"#b05050":pct>=75?"#c8903a":getSeat(d.id).color;
-    html+="<div class='sc'><div class='sc-name'>"+d.name+"</div>"
+    var pct=Math.min(100,Math.round(used/maxPax*100));
+    var bc=pct>=100?"#b05050":pct>=75?"#c8903a":g.color;
+    html+="<div class='sc'><div class='sc-name'>"+g.name+"</div>"
       +"<div class='sc-bar-wrap'><div class='sc-bar' style='width:"+pct+"%;background:"+bc+"'></div></div>"
-      +"<div class='sc-nums'><span class='sc-u'>"+used+"</span><span class='sc-sep'>/</span><span class='sc-tot'>"+d.max+"名</span></div></div>";
+      +"<div class='sc-nums'><span class='sc-u'>"+used+"</span><span class='sc-sep'>/</span><span class='sc-tot'>"+maxPax+"名</span></div></div>";
   }
   document.getElementById("summary").innerHTML=html;
 }
 
 function rsvRowHtml(r){
-  var s=getSeat(r.seat);
   var isCharter=r.type==="charter";
-  var color=isCharter?"#c8903a":s.color;
-  var name=isCharter?"【貸切】":r.name+" 様";
-  var seatInfo=isCharter?"全席":s.name+(r.table?" "+r.table:"");
+  var grp=normalizeGroup(r.seat);
+  var color=isCharter?"#c8903a":groupColor(grp);
+  var name=isCharter?"【貸切】":(r.name+" 様");
+  var tableInfo=isCharter?"全席":(groupName(grp)+(r.table?" "+r.table:" (未割当)"));
   var paxInfo=isCharter?"":r.pax+"名";
   var noteInfo=r.note?"<div style='font-size:10px;color:#999;width:100%;margin-top:2px'>備考: "+r.note+"</div>":"";
   return "<div class='card'><div class='dot' style='background:"+color+"'></div>"
     +"<span class='c-time'>"+r.time+"〜"+getEnd(r)+"</span>"
     +"<span class='c-name'>"+name+"</span>"
-    +"<span class='c-seat'>"+seatInfo+"</span>"
+    +"<span class='c-seat'>"+tableInfo+"</span>"
     +"<span class='c-pax'>"+paxInfo+"</span>"
     +"<span class='c-tel'>"+(r.tel||"")+"</span>"
     +(isCharter?"":"<button class='edit-btn' data-edit='"+r.id+"'>編集</button>")
@@ -452,63 +436,51 @@ function renderDay(){
   c.innerHTML=html;
 }
 
-// テーブル単位タイムライン
 function renderTL(){
   var ds=fmtD(curDay);var day=rsvsByDate(ds);var html="";
-  // 行: カウンター, 小1, 小2, 大1, 大2
-  var rows=[
-    {label:"カウンター",sub:"8席",seat:"counter",table:null,color:"#4a8fa8"},
-    {label:"ソファ 小1",sub:"〜5名",seat:"sofa-s",table:"小1",color:"#7a6e9e"},
-    {label:"ソファ 小2",sub:"〜5名",seat:"sofa-s",table:"小2",color:"#7a6e9e"},
-    {label:"ソファ 大1",sub:"〜6名",seat:"sofa-l",table:"大1",color:"#5a8f5a"},
-    {label:"ソファ 大2",sub:"〜6名",seat:"sofa-l",table:"大2",color:"#5a8f5a"}
-  ];
-  html="<thead><tr><th style='min-width:90px;text-align:left;padding-left:4px'>席/卓</th>";
+  html="<thead><tr><th style='min-width:70px;text-align:left;padding-left:4px'>卓</th>";
   for(var i=0;i<HOURS.length;i++) html+="<th>"+HOURS[i]+"</th>";
   html+="</tr></thead><tbody>";
-  for(var ri=0;ri<rows.length;ri++){
-    var row=rows[ri];
-    html+="<tr><td class='tl-lbl'>"+row.label+"<div class='tl-lbl-sub'>"+row.sub+"</div></td>";
+  // 貸切行（その日に貸切があれば最上部）
+  var charters=day.filter(function(r){return r.type==="charter";});
+  for(var ci=0;ci<charters.length;ci++){
+    var ch=charters[ci];
+    html+="<tr><td class='tl-lbl' style='color:#c8903a'>貸切<div class='tl-lbl-sub'>"+(ch.note||"")+"</div></td>";
+    var chStart=timeToMin(ch.time), chEnd=timeToMin(getEnd(ch));
     for(var hi=0;hi<HOURS.length;hi++){
-      var slotStart=timeToMin(HOURS[hi]);
-      var slotEnd=slotStart+30;
-      // このスロットに該当する予約
+      var s=timeToMin(HOURS[hi]), e=s+30;
+      var on=overlaps(s,e,chStart,chEnd);
+      html+="<td class='tl-cell' style='"+(on?"background:#faf0dd;":"")+"'>";
+      if(on && s===chStart) html+="<div class='tl-block' style='background:#c8903a'><div class='tl-bname'>貸切</div></div>";
+      html+="</td>";
+    }
+    html+="</tr>";
+  }
+  // 卓ごとの行
+  for(var oi=0;oi<TL_ORDER.length;oi++){
+    var tbl=tableById(TL_ORDER[oi]);
+    html+="<tr><td class='tl-lbl'>"+tbl.id+"<div class='tl-lbl-sub'>"+tbl.cap+"名</div></td>";
+    for(var hi=0;hi<HOURS.length;hi++){
+      var slotStart=timeToMin(HOURS[hi]), slotEnd=slotStart+30;
       var blocks=[];
       for(var di=0;di<day.length;di++){
         var r=day[di];
-        if(r.type==="lock") continue;
-        var rStart=timeToMin(r.time), rEnd=timeToMin(getEnd(r));
-        var match=false;
-        if(r.type==="charter"){ match=overlaps(slotStart,slotEnd,rStart,rEnd); }
-        else if(r.seat===row.seat){
-          if(row.table){ // ソファは卓一致
-            var tbls=(r.table||"").split(",");
-            if(tbls.indexOf(row.table)>=0 && overlaps(slotStart,slotEnd,rStart,rEnd)) match=true;
-          } else { // カウンターは席タイプ一致
-            if(overlaps(slotStart,slotEnd,rStart,rEnd)) match=true;
-          }
-        }
-        if(match) blocks.push(r);
+        if(r.type==="lock"||r.type==="charter") continue;
+        if(!r.table) continue;
+        var tbls=r.table.split(",");
+        var inTbl=false;
+        for(var tk=0;tk<tbls.length;tk++){ if(tbls[tk].trim()===tbl.id) inTbl=true; }
+        if(!inTbl) continue;
+        if(overlaps(slotStart,slotEnd,timeToMin(r.time),timeToMin(getEnd(r)))) blocks.push(r);
       }
-      var isStart=false;
-      for(var bi=0;bi<blocks.length;bi++){ if(timeToMin(blocks[bi].time)===slotStart) isStart=true; }
-      var cls="tl-cell";
-      var bg="";
-      if(blocks.length){ 
-        if(blocks[0].type==="charter"){bg="background:#faf0dd;";}
-        else{bg="background:"+hexToLight(row.color)+";";}
-      }
-      html+="<td class='"+cls+"' style='"+bg+"'>";
-      if(isStart){
-        for(var bi=0;bi<blocks.length;bi++){
-          var b=blocks[bi];
-          if(timeToMin(b.time)!==slotStart) continue;
-          var bColor=b.type==="charter"?"#c8903a":row.color;
-          var bName=b.type==="charter"?"貸切":b.name;
-          html+="<div class='tl-block' style='background:"+bColor+"' data-edit='"+(b.type==="charter"?"":b.id)+"'>"
-            +"<div class='tl-bname'>"+bName+"</div>"
-            +(b.type==="charter"?"":"<div class='tl-bpax'>"+b.pax+"名</div>")+"</div>";
-        }
+      var hasBlock=blocks.length>0;
+      var bg=hasBlock?"background:"+hexToLight(tbl.color)+";":"";
+      html+="<td class='tl-cell' style='"+bg+"'>";
+      for(var bi=0;bi<blocks.length;bi++){
+        var b=blocks[bi];
+        if(timeToMin(b.time)!==slotStart) continue;
+        html+="<div class='tl-block' style='background:"+tbl.color+"' data-edit='"+b.id+"'>"
+          +"<div class='tl-bname'>"+b.name+"</div><div class='tl-bpax'>"+b.pax+"名</div></div>";
       }
       html+="</td>";
     }
@@ -536,7 +508,7 @@ function renderWeek(){
     else{
       var show=list.slice(0,4);
       for(var j=0;j<show.length;j++){
-        var col=show[j].type==="charter"?"#c8903a":getSeat(show[j].seat).color;
+        var col=show[j].type==="charter"?"#c8903a":groupColor(normalizeGroup(show[j].seat));
         var nm=show[j].type==="charter"?"貸切":show[j].name;
         html+="<div class='week-chip' style='background:"+col+"'>"+show[j].time+" "+nm+"</div>";
       }
@@ -561,7 +533,7 @@ function renderMonth(){
     html+="<div class='"+cls+"' data-ds='"+ds+"'><div class='month-cell-num'>"+d+(locked?" 🔒":"")+"</div>";
     var show=list.slice(0,2);
     for(var j=0;j<show.length;j++){
-      var col=show[j].type==="charter"?"#c8903a":getSeat(show[j].seat).color;
+      var col=show[j].type==="charter"?"#c8903a":groupColor(normalizeGroup(show[j].seat));
       var nm=show[j].type==="charter"?"貸切":show[j].name;
       html+="<div class='month-chip' style='background:"+col+"'>"+show[j].time+" "+nm+"</div>";
     }
@@ -593,7 +565,6 @@ function delRsv(id){
   if(curView==="month"&&selMonthDay) setTimeout(function(){renderMonthDetail(selMonthDay);},2000);
 }
 
-// 終了時刻を自動で開始+120分に
 function autoEndtime(){
   var t=document.getElementById("m-time").value;
   var end=minToTime(timeToMin(t)+120);
@@ -601,18 +572,48 @@ function autoEndtime(){
   for(var i=0;i<sel.options.length;i++){ if(sel.options[i].value===end){sel.value=end;break;} }
 }
 
+// 卓選択肢を更新（自動割当結果＋手動変更用）
+function refreshTableOptions(autoTables){
+  var grp=document.getElementById("m-seat").value;
+  var g=groupById(grp);
+  var sel=document.getElementById("m-table");
+  sel.innerHTML="";
+  // 自動割当
+  var optAuto=document.createElement("option");
+  optAuto.value=autoTables||"";
+  optAuto.textContent="自動割当"+(autoTables?"（"+autoTables+"）":"（空きなし）");
+  sel.appendChild(optAuto);
+  // 各卓を個別選択肢に（グループ内）
+  if(g){
+    for(var i=0;i<g.tables.length;i++){
+      var tbl=tableById(g.tables[i]);
+      var o=document.createElement("option");
+      o.value=tbl.id;
+      o.textContent=tbl.id+"（"+tbl.cap+"名）";
+      sel.appendChild(o);
+    }
+  }
+}
+
 function onModalChange(){
   var date=document.getElementById("m-date").value;
   var time=document.getElementById("m-time").value;
   var endtime=document.getElementById("m-endtime").value;
-  var sid=document.getElementById("m-seat").value;
+  var grp=document.getElementById("m-seat").value;
   var pax=parseInt(document.getElementById("m-pax").value)||1;
   var warn=document.getElementById("mwarn");var ok=document.getElementById("mok");
   if(!date||!time||!endtime) return;
   if(timeToMin(endtime)<=timeToMin(time)){warn.style.display="block";warn.textContent="終了時刻は開始時刻より後にしてください";ok.disabled=true;return;}
-  var res=tryBook(date,time,endtime,sid,pax,editingId);
-  if(!res.ok){warn.style.display="block";warn.textContent=res.reason;ok.disabled=true;}
-  else{warn.style.display="none";ok.disabled=false;}
+  var res=tryBook(date,time,endtime,grp,pax,editingId);
+  if(!res.ok){
+    warn.style.display="block";warn.textContent=res.reason;
+    refreshTableOptions("");
+    ok.disabled=true;
+  } else {
+    warn.style.display="none";
+    refreshTableOptions(res.table);
+    ok.disabled=false;
+  }
 }
 
 function openModal(id){
@@ -625,11 +626,19 @@ function openModal(id){
     document.getElementById("m-date").value=r.date;
     document.getElementById("m-time").value=r.time;
     document.getElementById("m-endtime").value=getEnd(r);
-    document.getElementById("m-seat").value=r.seat;
+    document.getElementById("m-seat").value=normalizeGroup(r.seat);
     document.getElementById("m-pax").value=r.pax;
     document.getElementById("m-name").value=r.name;
     document.getElementById("m-tel").value=r.tel;
     document.getElementById("m-note").value=r.note||"";
+    onModalChange();
+    // 既存の卓があればそれを選択
+    if(r.table){
+      var sel=document.getElementById("m-table");
+      var found=false;
+      for(var i=0;i<sel.options.length;i++){ if(sel.options[i].value===r.table){sel.value=r.table;found=true;break;} }
+      if(!found){ var o=document.createElement("option");o.value=r.table;o.textContent="現在: "+r.table;sel.insertBefore(o,sel.firstChild);sel.value=r.table; }
+    }
   } else {
     var dd=(curView==="month"&&selMonthDay)?selMonthDay:fmtD(curDay);
     document.getElementById("m-date").value=dd;
@@ -640,11 +649,11 @@ function openModal(id){
     document.getElementById("m-name").value="";
     document.getElementById("m-tel").value="";
     document.getElementById("m-note").value="";
+    onModalChange();
   }
   document.getElementById("mwarn").style.display="none";
   document.getElementById("mok").disabled=false;
   document.getElementById("modal").classList.remove("off");
-  onModalChange();
 }
 function closeModal(){document.getElementById("modal").classList.add("off");editingId=null;}
 
@@ -652,16 +661,20 @@ function saveRsv(){
   var date=document.getElementById("m-date").value;
   var time=document.getElementById("m-time").value;
   var endtime=document.getElementById("m-endtime").value;
-  var sid=document.getElementById("m-seat").value;
+  var grp=document.getElementById("m-seat").value;
   var pax=parseInt(document.getElementById("m-pax").value);
   var name=document.getElementById("m-name").value.trim();
   var tel=document.getElementById("m-tel").value.trim();
   var note=document.getElementById("m-note").value.trim();
+  var table=document.getElementById("m-table").value;
   if(!date||!name){alert("日付とお名前を入力してください");return;}
-  var res=tryBook(date,time,endtime,sid,pax,editingId);
-  if(!res.ok){alert(res.reason+"のため保存できません");return;}
+  if(!table){
+    var res=tryBook(date,time,endtime,grp,pax,editingId);
+    if(!res.ok){alert(res.reason+"のため保存できません");return;}
+    table=res.table;
+  }
   var ok=document.getElementById("mok");ok.disabled=true;
-  var payload={date:date,time:time,endtime:endtime,seat:sid,table:res.table,pax:pax,name:name,tel:tel,note:note,type:"normal"};
+  var payload={date:date,time:time,endtime:endtime,seat:grp,table:table,pax:pax,name:name,tel:tel,note:note,type:"normal"};
   if(editingId){payload.action="update";payload.id=editingId;}
   else{payload.action="add";}
   apiPost(payload);
@@ -671,7 +684,6 @@ function saveRsv(){
   updateLbl();
 }
 
-// 貸切
 function openCharter(){
   var dd=(curView==="month"&&selMonthDay)?selMonthDay:fmtD(curDay);
   document.getElementById("ch-date").value=dd;
@@ -688,7 +700,7 @@ function saveCharter(){
   var note=document.getElementById("ch-note").value.trim();
   if(!date){alert("日付を入力してください");return;}
   if(timeToMin(end)<=timeToMin(start)){alert("終了時刻は開始時刻より後にしてください");return;}
-  if(!confirm(date+" "+start+"〜"+end+" を貸切にしますか？\nこの時間帯の全席が予約不可になります。")) return;
+  if(!confirm(date+" "+start+"〜"+end+" を貸切にしますか？")) return;
   apiPost({action:"add",date:date,time:start,endtime:end,seat:"charter",table:"",pax:0,name:"貸切",tel:"",note:note,type:"charter"});
   closeCharter();
   curDay=new Date(date+"T00:00:00");curWeekStart=weekStart(curDay);
@@ -696,16 +708,14 @@ function saveCharter(){
   updateLbl();
 }
 
-// ロック
 function toggleLock(){
   var ds=fmtD(curView==="day"||curView==="tl"?curDay:new Date());
   if(isDayLocked(ds)){
-    // ロック解除: lock行を探して削除
     var lockId=null;
     for(var i=0;i<rsvCache.length;i++){ if(rsvCache[i].date===ds&&rsvCache[i].type==="lock") lockId=rsvCache[i].id; }
     if(lockId&&confirm(fmtLabel(curDay)+"のロックを解除しますか？")){ apiPost({action:"delete",id:lockId}); }
   } else {
-    if(confirm(fmtLabel(curDay)+"を満席（ロック）にしますか？\nこの日の新規予約が停止されます。")){
+    if(confirm(fmtLabel(curDay)+"を満席（ロック）にしますか？")){
       apiPost({action:"add",date:ds,time:"",endtime:"",seat:"",table:"",pax:0,name:"",tel:"",note:"手動ロック",type:"lock"});
     }
   }
