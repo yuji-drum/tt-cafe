@@ -376,14 +376,14 @@ function updateLbl(){var t="";if(curView==="day"||curView==="tl")t=fmtLabel(curD
 function render(){renderLockBtn();renderSummary();if(curView==="day")renderDay();else if(curView==="tl")renderTL();else if(curView==="week")renderWeek();else if(curView==="month")renderMonth();}
 
 function renderLockBtn(){
-  var ds=fmtD(curView==="day"||curView==="tl"?curDay:new Date());
+  var ds=curView==="month"&&selMonthDay?selMonthDay:(curView==="day"||curView==="tl"?fmtD(curDay):fmtD(new Date()));
   var btn=document.getElementById("btn-lock");
   if(isDayLocked(ds)){btn.textContent="🔒 ロック中";btn.style.background="#b05050";btn.style.color="#fff";}
   else{btn.textContent="🔓 ロック";btn.style.background="";btn.style.color="";}
 }
 
 function renderSummary(){
-  var ds=fmtD(curView==="day"||curView==="tl"?curDay:new Date());
+  var ds=curView==="month"&&selMonthDay?selMonthDay:(curView==="day"||curView==="tl"?fmtD(curDay):fmtD(new Date()));
   var html="";
   for(var gi=0;gi<GROUPS.length;gi++){
     var g=GROUPS[gi];
@@ -391,17 +391,7 @@ function renderSummary(){
     for(var ti=0;ti<g.tables.length;ti++) maxPax+=tableById(g.tables[ti]).cap;
     var used=0;
     var ex=rsvsByDate(ds).filter(function(r){return normalizeGroup(r.seat)===g.id && r.type==="normal";});
-    for(var j=0;j<ex.length;j++){
-      if(ex[j].table){
-        var tbls=ex[j].table.split(",");
-        for(var tk=0;tk<tbls.length;tk++){
-          var tb=tableById(tbls[tk].trim());
-          if(tb) used+=tb.cap;
-        }
-      } else {
-        used+=parseInt(ex[j].pax)||0;
-      }
-    }
+    for(var j=0;j<ex.length;j++) used+=parseInt(ex[j].pax)||0;
     var pct=Math.min(100,Math.round(used/maxPax*100));
     var bc=pct>=100?"#b05050":pct>=75?"#c8903a":g.color;
     html+="<div class='sc'><div class='sc-name'>"+g.name+"</div>"
@@ -719,11 +709,25 @@ function saveCharter(){
 }
 
 function toggleLock(){
-  var ds=fmtD(curView==="day"||curView==="tl"?curDay:new Date());
+  var ds=curView==="month"&&selMonthDay?selMonthDay:(curView==="day"||curView==="tl"?fmtD(curDay):fmtD(new Date()));
   if(isDayLocked(ds)){
-    var lockId=null;
-    for(var i=0;i<rsvCache.length;i++){ if(rsvCache[i].date===ds&&rsvCache[i].type==="lock") lockId=rsvCache[i].id; }
-    if(lockId&&confirm(fmtLabel(curDay)+"のロックを解除しますか？")){ apiPost({action:"delete",id:lockId}); }
+    var lockRow=null;
+    for(var i=0;i<rsvCache.length;i++){
+      if(rsvCache[i].date===ds&&rsvCache[i].type==="lock") lockRow=rsvCache[i];
+    }
+    if(!lockRow) return;
+    var isMonday=String(lockRow.id).indexOf("monday_")===0;
+    if(isMonday){
+      // 月曜定休日の解除：monday_openレコードを追加
+      if(confirm(fmtLabel(curDay)+"（定休日）のロックを解除しますか？\nこの日のみ営業日として扱います。")){
+        apiPost({action:"add",date:ds,time:"",endtime:"",seat:"",table:"",pax:0,name:"",tel:"",note:"定休日解除",type:"monday_open"});
+      }
+    } else {
+      // 通常ロックの解除
+      if(confirm(fmtLabel(curDay)+"のロックを解除しますか？")){
+        apiPost({action:"delete",id:String(lockRow.id)});
+      }
+    }
   } else {
     if(confirm(fmtLabel(curDay)+"を満席（ロック）にしますか？")){
       apiPost({action:"add",date:ds,time:"",endtime:"",seat:"",table:"",pax:0,name:"",tel:"",note:"手動ロック",type:"lock"});
